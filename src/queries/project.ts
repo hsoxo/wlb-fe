@@ -1,40 +1,48 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { get, put, del } from "./base";
+import { get, put, del, post } from "./base";
 import { Project } from "@/types/project";
 
-export function useProject(id: string) {
-  const queryClient = useQueryClient();
+export const useProjects = () => {
+  return useQuery({
+    queryKey: ["projects"],
+    queryFn: (): Promise<Project[]> => get("/api/projects"),
+  });
+};
 
-  const {
-    data: project,
-    isLoading,
-    error,
-  } = useQuery({
+export const useCreateProject = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (project: { name: string }) => post("/api/projects", project),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects"] }),
+  });
+};
+
+export const useGetProject = (id: string) => {
+  return useQuery({
     queryKey: ["project", id],
     queryFn: (): Promise<Project> => get(`/api/projects/${id}`),
   });
+};
 
-  const deleteMutation = useMutation({
-    mutationFn: () => del(`/api/projects/${id}`),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["projects", id] }), // 重新获取
+export const useUpdateProject = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (project: Omit<Project, "createdAt" | "updatedAt">) =>
+      put(`/api/projects/${project.id}`, project),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["project", variables.id] });
+    },
   });
+};
 
-  // 更新项目
-  const updateMutation = useMutation({
-    mutationFn: (project: Partial<Project>) =>
-      put(`/api/projects/${id}`, project),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["projects", id] }),
+export const useDeleteProject = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => del(`/api/projects/${id}`),
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["project", id] });
+    },
   });
-
-  return {
-    project,
-    isLoading,
-    error,
-    deleteProject: deleteMutation.mutateAsync,
-    isDeleteProjectLoading: deleteMutation.isPending,
-    updateProject: updateMutation.mutateAsync,
-    isUpdateProjectLoading: updateMutation.isPending,
-  };
-}
+};

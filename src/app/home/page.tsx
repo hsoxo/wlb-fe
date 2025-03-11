@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Plus, Loader2 } from "lucide-react";
-import { useProjects } from "@/queries/projects";
+import { useProjects, useCreateProject } from "@/queries/project";
 import {
   Dialog,
   DialogContent,
@@ -17,8 +17,10 @@ import { useRouter } from "next/navigation";
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const { projects, isLoading, error, createProject, isCreateProjectLoading } =
-    useProjects();
+  const { data: projects, isLoading, error } = useProjects();
+  const { mutate: createProject, isPending: isCreateProjectLoading } =
+    useCreateProject();
+
   const [newProjectName, setNewProjectName] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 

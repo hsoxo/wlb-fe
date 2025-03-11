@@ -1,31 +1,26 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { KnowledgeBase, KnowledgeBaseType } from "@/types/project";
-import { get, post, put } from "./base";
+import { del, get, post, put } from "./base";
 
-export const useKnowledgeBases = (projectId: string) => {
-  const queryClient = useQueryClient();
-
-  const {
-    data: knowledgeBases,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["knowledgeBases", projectId],
-    queryFn: (): Promise<{ items: KnowledgeBase[] }> =>
-      get(`/api/knowledge-bases?project_id=${projectId}`),
-  });
-
-  const {
-    data: knowledgeBaseTypes,
-    isLoading: isKnowledgeBaseTypesLoading,
-    error: knowledgeBaseTypesError,
-  } = useQuery({
+export const useKnowledgeBaseTypes = () => {
+  return useQuery({
     queryKey: ["knowledgeBaseTypes"],
     queryFn: (): Promise<{ items: KnowledgeBaseType[] }> =>
       get("/api/knowledge-bases/types"),
   });
+};
 
-  const createKnowledgeBase = useMutation({
+export const useGetAllKnowledgeBases = (projectId: string) => {
+  return useQuery({
+    queryKey: ["knowledgeBases", projectId],
+    queryFn: (): Promise<{ items: KnowledgeBase[] }> =>
+      get(`/api/knowledge-bases?project_id=${projectId}`),
+  });
+};
+
+export const useCreateKnowledgeBase = (projectId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
     mutationFn: (knowledgeBase: {
       name: string;
       type: number;
@@ -37,55 +32,48 @@ export const useKnowledgeBases = (projectId: string) => {
       });
     },
   });
-
-  return {
-    knowledgeBases,
-    isLoading,
-    error,
-    knowledgeBaseTypes,
-    isKnowledgeBaseTypesLoading,
-    knowledgeBaseTypesError,
-    createKnowledgeBase: createKnowledgeBase.mutate,
-  };
 };
 
-// 知识库 Hook
-export function useKnowledgeBase(kbId: string) {
-  const queryClient = useQueryClient();
-
-  const {
-    data: knowledgeBase,
-    isLoading,
-    error,
-  } = useQuery({
+export const useGetKnowledgeBase = (kbId: string) => {
+  return useQuery({
     queryKey: ["knowledgeBase", kbId],
     queryFn: (): Promise<KnowledgeBase> => get(`/api/knowledge-bases/${kbId}`),
   });
+};
 
-  const updateKnowledgeBase = useMutation({
+export const useUpdateKnowledgeBase = (kbId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
     mutationFn: (knowledgeBase: KnowledgeBase) =>
       put(`/api/knowledge-bases/${kbId}`, knowledgeBase),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["knowledgeBase", kbId],
+        queryKey: ["knowledgeBases", kbId],
       });
     },
   });
+};
 
-  const syncKnowledgeBase = useMutation({
-    mutationFn: (kbId: string) => post(`/api/knowledge-bases/${kbId}/sync`),
+export const useDeleteKnowledgeBase = (kbId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => del(`/api/knowledge-bases/${kbId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["knowledgeBase", kbId],
+        queryKey: ["knowledgeBases", kbId],
       });
     },
   });
+};
 
-  return {
-    knowledgeBase,
-    isLoading,
-    error,
-    updateKnowledgeBase: updateKnowledgeBase.mutate,
-    syncKnowledgeBase: syncKnowledgeBase.mutate,
-  };
-}
+export const useSyncKnowledgeBase = (kbId: string) => {
+  return useMutation({
+    mutationFn: () => post(`/api/knowledge-bases/${kbId}/sync`),
+  });
+};
+
+export const useTrainKnowledgeBase = (kbId: string) => {
+  return useMutation({
+    mutationFn: () => post(`/api/knowledge-bases/${kbId}/train`),
+  });
+};

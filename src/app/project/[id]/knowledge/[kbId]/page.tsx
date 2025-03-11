@@ -2,8 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useKnowledgeBase } from "@/queries/knowledge-bases";
+import {
+  useGetKnowledgeBase,
+  useSyncKnowledgeBase,
+  useTrainKnowledgeBase,
+} from "@/queries/knowledge-bases";
 import { use } from "react";
+import KnowledgeTable from "./components/KnowledgeTable";
 
 interface PageProps {
   params: Promise<{ id: string; kbId: string }>;
@@ -12,8 +17,9 @@ interface PageProps {
 export default function KnowledgeBaseDetail({ params }: PageProps) {
   const { kbId } = use(params);
 
-  const { knowledgeBase, isLoading, error, syncKnowledgeBase } =
-    useKnowledgeBase(kbId);
+  const { data: knowledgeBase, isLoading, error } = useGetKnowledgeBase(kbId);
+  const { mutate: syncKnowledgeBase } = useSyncKnowledgeBase(kbId);
+  const { mutate: trainKnowledgeBase } = useTrainKnowledgeBase(kbId);
 
   if (isLoading) return <p className="text-gray-500">加载中...</p>;
   if (error) return <p className="text-red-500">加载失败</p>;
@@ -43,8 +49,11 @@ export default function KnowledgeBaseDetail({ params }: PageProps) {
 
       {/* Action Area */}
       <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => syncKnowledgeBase(kbId)}>
+        <Button variant="outline" onClick={() => syncKnowledgeBase()}>
           同步
+        </Button>
+        <Button variant="outline" onClick={() => trainKnowledgeBase()}>
+          训练
         </Button>
         <Button>保存</Button>
         <Button variant="destructive">删除</Button>
@@ -64,6 +73,8 @@ export default function KnowledgeBaseDetail({ params }: PageProps) {
           value={knowledgeBase?.description}
         />
       </div>
+
+      <KnowledgeTable kbId={kbId} />
     </div>
   );
 }

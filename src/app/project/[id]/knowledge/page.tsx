@@ -26,7 +26,11 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Loader2, Plus, Edit } from "lucide-react";
-import { useKnowledgeBases } from "@/queries/knowledge-bases";
+import {
+  useGetAllKnowledgeBases,
+  useKnowledgeBaseTypes,
+  useCreateKnowledgeBase,
+} from "@/queries/knowledge-bases";
 import Link from "next/link";
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -35,12 +39,12 @@ interface PageProps {
 export default function KnowledgeBase({ params }: PageProps) {
   const { id: projectId } = use(params);
   const {
-    knowledgeBases,
+    data: knowledgeBases,
     isLoading,
     error,
-    knowledgeBaseTypes,
-    createKnowledgeBase,
-  } = useKnowledgeBases(projectId);
+  } = useGetAllKnowledgeBases(projectId);
+  const { data: knowledgeBaseTypes } = useKnowledgeBaseTypes();
+  const { mutate: createKnowledgeBase } = useCreateKnowledgeBase(projectId);
 
   const [name, setName] = useState("");
   const [type, setType] = useState("document"); // 默认类型

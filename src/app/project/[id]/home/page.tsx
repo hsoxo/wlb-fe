@@ -4,7 +4,7 @@ import { useState, useEffect, use } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { useProject } from "@/queries/project";
+import { useGetProject, useUpdateProject } from "@/queries/project";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -12,13 +12,13 @@ interface PageProps {
 
 export default function ProjectSettings({ params }: PageProps) {
   const { id } = use(params);
-  const { project, isLoading, error, updateProject } = useProject(id);
+  const { data: project, isLoading, error } = useGetProject(id);
+  const { mutate: updateProject, isPending: isUpdating } = useUpdateProject();
 
-  const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    basePrompt: "",
+    systemPrompt: "",
   });
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function ProjectSettings({ params }: PageProps) {
       setFormData({
         name: project.name,
         description: project.description,
-        basePrompt: project.basePrompt,
+        systemPrompt: project.systemPrompt,
       });
     }
   }, [project]);
@@ -40,12 +40,13 @@ export default function ProjectSettings({ params }: PageProps) {
 
   // 提交更新
   const handleSubmit = async () => {
+    if (!project) return;
     await updateProject({
+      id: project.id,
       name: formData.name,
       description: formData.description,
-      basePrompt: formData.basePrompt,
+      systemPrompt: formData.systemPrompt,
     });
-    setEditing(false);
   };
 
   if (isLoading) return <p className="text-gray-500">加载中...</p>;
@@ -83,21 +84,27 @@ export default function ProjectSettings({ params }: PageProps) {
           className="border w-full p-2 rounded"
           value={formData.description}
           onChange={handleChange}
+          rows={5}
         />
       </div>
 
       <div>
-        <label className="text-sm font-medium">Base Prompt</label>
+        <label className="text-sm font-medium">System Prompt</label>
         <textarea
-          name="basePrompt"
+          name="systemPrompt"
           className="border w-full p-2 rounded"
-          value={formData.basePrompt}
+          value={formData.systemPrompt}
           onChange={handleChange}
+          rows={24}
         />
       </div>
 
-      <Button onClick={handleSubmit}>
-        {editing ? <Loader2 className="animate-spin mr-2" size={18} /> : "保存"}
+      <Button onClick={handleSubmit} disabled={isUpdating}>
+        {isUpdating ? (
+          <Loader2 className="animate-spin mr-2" size={18} />
+        ) : (
+          "保存"
+        )}
       </Button>
     </div>
   );

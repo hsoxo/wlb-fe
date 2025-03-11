@@ -16,13 +16,19 @@ export function useAuth() {
   const { data: user, isLoading } = useQuery({
     queryKey: ["user"],
     queryFn: (): Promise<User> => get("/api/auth/me"),
+    enabled: typeof window !== "undefined" && !!localStorage.getItem("token"),
   });
 
   const loginMutation = useMutation({
     mutationFn: (data: { email: string; password: string }) =>
-      post("/api/auth/login", data),
-    onSuccess: (user) => {
-      queryClient.setQueryData(["user"], user);
+      post<{ email: string; password: string }, { accessToken: string }>(
+        "/api/auth/login",
+        data
+      ),
+    onSuccess: (token) => {
+      console.log("token", token);
+      localStorage.setItem("token", token.accessToken);
+      queryClient.invalidateQueries({ queryKey: ["user"] });
     },
   });
 
